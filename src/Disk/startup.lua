@@ -131,7 +131,7 @@ local function bootstrap()
     local cache_file = fs.dosOpen("C:\\DOS\\.cache","w")
     local cache = {}
     cache.current_drive = "C"
-    cache.current_path = "\\"
+    cache.current_path = ""
     cache.drive_type = "hdd"
     cache_file.write(textutils.serialize(cache))
     cache_file.close()

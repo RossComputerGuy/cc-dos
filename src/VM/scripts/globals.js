@@ -7,11 +7,11 @@
 
 
 var config = {
-	"width": 51,
-	"height": 19,
+	"width": 61,
+	"height": 29,
 
-	"cellWidth": 12,
-	"cellHeight": 18,
+	"cellWidth": 22,
+	"cellHeight": 28,
 
 	"terminalScale": 1.0,
 

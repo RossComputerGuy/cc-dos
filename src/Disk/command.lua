@@ -33,7 +33,32 @@ while true do
             dos.changeDrive(input[1])
         else
             local args = explode(input," ")
-            shell.run(unpack(args))
+            if args[1] == "dir" then
+                local cwd = dos.getCurrentPath()
+                if #args == 2 then
+                    cwd = args[2]
+                end
+                print("Volume in drive "..dos.getCurrentDrive().mount.." is "..dos.getCurrentDrive().label)
+                print("Directory of "..dos.getCurrentDrive().mount..":\\"..cwd.."\n")
+                local path = dos.getCurrentDrive().path..cwd
+                local files = fs.list(path)
+                local contents = {}
+                for k,v in pairs(files) do
+                    if fs.isDir(v) then
+                        contents[#contents+1] = "<DIR>        "..v
+                    end
+                end
+                for k,v in pairs(files) do
+                    if not fs.isDir(v) then
+                        contents[#contents+1] = "     "..fs.getSize(v).." "..v
+                    end
+                end
+                for k,v in pairs(contents) do
+                    print(v)
+                end
+            else
+                shell.run(unpack(args))
+            end
         end
         local x,y = term.getCursorPos()
         term.setCursorPos(x,y+1)
