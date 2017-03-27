@@ -1,3 +1,4 @@
+os.loadAPI("/DOS/dos")
 local x,y = term.getCursorPos()
 
 function explode(inputstr,sep)
@@ -14,6 +15,7 @@ end
 
 term.setCursorPos(x,y+1)
 term.write("CC-DOS by Spaceboy_Ross")
+term.setCursorPos(x,y+3)
 
 while true do
     print(dos.getCurrentDrive().mount..":\\"..dos.getCurrentPath().."> ")
@@ -21,6 +23,8 @@ while true do
     term.setCursorPos(x+string.len(dos.getCurrentDrive().mount..":\\"..dos.getCurrentPath().."> "),y-1)
     local input = read()
     if string.len(input) > 0 then
+        local x,y = term.getCursorPos()
+        term.setCursorPos(x,y+1)
         if input == "ls" then
             print("No such program")
         elseif input == "ver" then
@@ -31,5 +35,7 @@ while true do
             local args = explode(input," ")
             shell.run(unpack(args))
         end
+        local x,y = term.getCursorPos()
+        term.setCursorPos(x,y+1)
     end
 end

@@ -24,7 +24,7 @@ local function replace(pos,str,r)
 end
 
 local function readCache()
-    local file = fs.open(build.cache,"r")
+    local file = fs.dosOpen(build.cache,"r")
     local cache = textutils.unserialize(file.readAll())
     file.close()
     return cache
@@ -58,13 +58,13 @@ local function Drive(side,mnt)
     
     if disk.isPresent(side) then
         return drive
-    elseif side == "C" then
+    elseif mnt == "C" then
         return drive
     end
 end
 
 function getDrives()
-    local file = fs.open(build.drives,"r")
+    local file = fs.dosOpen(build.drives,"r")
     local drvs = textutils.unserialize(file.readAll())
     local drives = {}
     local mnts = {}
@@ -79,14 +79,14 @@ function getDrives()
 end
 
 function getCurrentDrive()
-    local file = fs.open(build.cache,"r")
+    local file = fs.dosOpen(build.cache,"r")
     local cache = textutils.unserialize(file.readAll())
     file.close()
-    return Drive(cache.current_drive)
+    return Drive(cache.drive_type,cache.current_drive)
 end
 
 function getCurrentPath()
-    local file = fs.open(build.cache,"r")
+    local file = fs.dosOpen(build.cache,"r")
     local cache = textutils.unserialize(file.readAll())
     file.close()
     return cache.current_path
@@ -94,8 +94,16 @@ end
 
 function changeDrive(d)
     local cache = readCache()
-    local file = fs.open(build.cache,"wb")
+    local file = fs.dosOpen(build.cache,"wb")
     cache.current_drive = d
+    file.write(textutils.serialize(cache))
+    file.close()
+end
+
+function changePath(d)
+    local cache = readCache()
+    local file = fs.dosOpen(build.cache,"wb")
+    cache.current_path = d
     file.write(textutils.serialize(cache))
     file.close()
 end
@@ -110,7 +118,7 @@ os.version = os_version
 local old_fs_open = fs.open
 
 local function fs_open(path,mode)
-    local mnt = path[1]
+    local mnt = explode(path,":\\")[1]
     local drives_file = old_fs_open("/DOS/.drives","r")
     local drvs = textutils.unserialize(drives_file.readAll())
     local drive = nil
@@ -118,21 +126,28 @@ local function fs_open(path,mode)
     mnts[1] = "A"
     mnts[2] = "B"
     mnts[3] = "C"
-    for k,v in ipairs(drvs) do
-        if mnts[k] == mnt then
-            drive = Drive(v,mnts[k])
-            break
-        end
+    if mnt == "A" and not drvs.A == nil then
+    	drive = Drive(drvs.A,"A")
+    elseif mnt == "B" and not drvs.B == nil then
+    	drive = Drive(drvs.B,"B")
+    elseif mnt == "C" then
+    	drive = Drive("hdd","C")
     end
     drives_file.close()
     if drive == nil then
         return nil
     else
-        local pth = replace(1,table.concat(explode(path,"\\"),"/"),drive.path)
+    	if mnt == "C" then
+    		local brk = string.sub(path,4,5+(string.len(path)-5))
+    		local pth = table.concat(explode(brk,"\\"),"/")
+    	else
+    		local brk = drive.path..string.sub(path,4,5+(string.len(path)-5))
+    		local pth = table.concat(explode(brk,"\\"),"/")
+    	end
         return old_fs_open(pth,mode)
     end
 end
-fs.open = fs_open
+fs.dosOpen = fs_open
 
 os.getCurrentPath = getCurrentPath
 disk.getCurrentDrive = getCurrentDrive
