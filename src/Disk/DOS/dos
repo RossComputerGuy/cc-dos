@@ -1,0 +1,138 @@
+-- Variables
+
+local build = {}
+build.cache = "C:\\DOS\\.cache"
+build.drives = "C:\\DOS\\.drives"
+build.version = "1.0"
+
+-- Functions
+
+local function explode(inputstr,sep)
+    if sep == nil then
+        sep = "%s"
+    end
+    local t = {} ; i=1
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+        t[i] = str
+        i = i + 1
+    end
+    return t
+end
+
+local function replace(pos,str,r)
+    return str:sub(1, pos-1) .. r .. str:sub(pos+1)
+end
+
+local function readCache()
+    local file = fs.open(build.cache,"r")
+    local cache = textutils.unserialize(file.readAll())
+    file.close()
+    return cache
+end
+
+local function Drive(side,mnt)
+    local drive = {}
+    if disk.isPresent(side) then
+        drive.label = disk.getLabel(side)
+    elseif mnt == "C" then
+        drive.label = "CC-DOS"
+    end
+    
+    if disk.isPresent(side) then
+        drive.id = disk.getID(side)
+    end
+    
+    if disk.isPresent(side) then
+        drive.free_mem = fs.getFreeSpace(disk.getMountPath(side))
+    elseif mnt == "C" then
+        drive.free_mem = fs.getFreeSpace("/")
+    end
+    
+    if disk.isPresent(side) then
+        drive.path = disk.getMountPath(side)
+    elseif mnt == "C" then
+        drive.path = "/"
+    end
+    
+    drive.mount = mnt
+    
+    if disk.isPresent(side) then
+        return drive
+    elseif side == "C" then
+        return drive
+    end
+end
+
+function getDrives()
+    local file = fs.open(build.drives,"r")
+    local drvs = textutils.unserialize(file.readAll())
+    local drives = {}
+    local mnts = {}
+    mnts[1] = "A"
+    mnts[2] = "B"
+    mnts[3] = "C"
+    for k,v in ipairs(drvs) do
+        drives[#drives+1] = Drive(v,mnts[k])
+    end
+    file.close()
+    return drives
+end
+
+function getCurrentDrive()
+    local file = fs.open(build.cache,"r")
+    local cache = textutils.unserialize(file.readAll())
+    file.close()
+    return Drive(cache.current_drive)
+end
+
+function getCurrentPath()
+    local file = fs.open(build.cache,"r")
+    local cache = textutils.unserialize(file.readAll())
+    file.close()
+    return cache.current_path
+end
+
+function changeDrive(d)
+    local cache = readCache()
+    local file = fs.open(build.cache,"wb")
+    cache.current_drive = d
+    file.write(textutils.serialize(cache))
+    file.close()
+end
+
+-- APIs Overrides
+
+local function os_version()
+    return "CC-DOS Version "..build.version
+end
+os.version = os_version
+
+local old_fs_open = fs.open
+
+local function fs_open(path,mode)
+    local mnt = path[1]
+    local drives_file = old_fs_open("/DOS/.drives","r")
+    local drvs = textutils.unserialize(drives_file.readAll())
+    local drive = nil
+    local mnts = {}
+    mnts[1] = "A"
+    mnts[2] = "B"
+    mnts[3] = "C"
+    for k,v in ipairs(drvs) do
+        if mnts[k] == mnt then
+            drive = Drive(v,mnts[k])
+            break
+        end
+    end
+    drives_file.close()
+    if drive == nil then
+        return nil
+    else
+        local pth = replace(1,table.concat(explode(path,"\\"),"/"),drive.path)
+        return old_fs_open(pth,mode)
+    end
+end
+fs.open = fs_open
+
+os.getCurrentPath = getCurrentPath
+disk.getCurrentDrive = getCurrentDrive
