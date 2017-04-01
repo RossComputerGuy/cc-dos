@@ -253,7 +253,8 @@ sidebar.dataFromFilesystem = function(dir) {
 
 sidebar.getData = function() {
 	var computer = core.getActiveComputer();
-	var dir = "/computers/" + computer.id;
+	//var dir = "/computers/" + computer.id;
+	var dir = "/disk";
 	var files = sidebar.dataFromFilesystem(dir);
 
 	files.unshift({

@@ -7,11 +7,11 @@
 
 
 var config = {
-	"width": 61,
-	"height": 29,
+	"width": 51,
+	"height": 19,
 
-	"cellWidth": 22,
-	"cellHeight": 28,
+	"cellWidth": 12,
+	"cellHeight": 18,
 
 	"terminalScale": 1.0,
 
@@ -38,7 +38,8 @@ globals.sides = [
 globals.paths = {
 	"font": "fonts/font.png",
 	"rom": "lua/rom.zip",
-	"dos": "lua/ccdos.zip"
+	"dos": "lua/dos.zip",
+	"sys": "lua/sys.zip"
 };
 
 

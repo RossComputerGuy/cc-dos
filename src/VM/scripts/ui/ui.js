@@ -135,7 +135,7 @@ ui.saveOpenFile = function() {
 		var path = sidebar.pathOfSelected();
 		if (path) {
 			var contents = ui.editor.getSession().getValue();
-			filesystem.write(path, contents);
+			//filesystem.write(path, contents);
 		}
 	}
 }
@@ -157,7 +157,8 @@ ui.showEditor = function(path) {
 	var scroll = ui.scrollLocations[path];
 	var name = filesystem.getName(path);
 	var computer = core.getActiveComputer();
-	var displayPath = path.replace("/computers/" + computer.id, "");
+	//var displayPath = path.replace("/computers/" + computer.id, "");
+	var displayPath = path.replace("/disk","");
 
 	$("#editor-title").html(name);
 	$("#editor-file-path").html(displayPath);

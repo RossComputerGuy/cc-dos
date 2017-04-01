@@ -1,66 +1,47 @@
-os.loadAPI("/DOS/dos")
-local x,y = term.getCursorPos()
-
-function explode(inputstr,sep)
-    if sep == nil then
-        sep = "%s"
+local function loadApis()
+    local apis = fs.list("/CC-DOS/apis/")
+    for k,v in pairs(apis) do
+        os.loadAPI("/CC-DOS/apis/"..v)
     end
-    local t = {} ; i=1
-    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-        t[i] = str
-        i = i + 1
-    end
-    return t
 end
+local x,y = term.getCursorPos()
 
 term.setCursorPos(x,y+1)
 term.write("CC-DOS by Spaceboy_Ross")
 term.setCursorPos(x,y+3)
 
+if fs.exists(utils.dosPathToUnixPath("C:\\autoexec.lua")) then
+    shell.run(utils.dosPathToUnixPath("C:\\autoexec.lua"))
+end
+
+local history = {}
+
 while true do
-    print(dos.getCurrentDrive().mount..":\\"..dos.getCurrentPath().."> ")
+    print(sys.getcache("sys").current_drive..":\\"..sys.getcache("sys").current_path.."> ")
     local x,y = term.getCursorPos()
-    term.setCursorPos(x+string.len(dos.getCurrentDrive().mount..":\\"..dos.getCurrentPath().."> "),y-1)
-    local input = read()
+    term.setCursorPos(x+string.len(sys.getcache("sys").current_drive..":\\"..sys.getcache("sys").current_path.."> "),y-1)
+    local input = read(nil,history)
+    history[#history+1] = input
     if string.len(input) > 0 then
-        local x,y = term.getCursorPos()
-        term.setCursorPos(x,y+1)
         if input == "ls" then
             print("No such program")
-        elseif input == "ver" then
-            print(os.version())
         elseif input == "A:" or input == "B:" or input == "C:" then
-            dos.changeDrive(input[1])
+            sys.cd(input:sub(1,1),"")
         else
-            local args = explode(input," ")
-            if args[1] == "dir" then
-                local cwd = dos.getCurrentPath()
-                if #args == 2 then
-                    cwd = args[2]
+            local args = utils.explode(input," ")
+            local commands = fs.list(utils.dosPathToUnixPath("C:\\CC-DOS\\commands"))
+            local found = false
+            for k,v in pairs(commands) do
+                if args[1] == v then
+                    found = true
+                    args[1] = "/CC-DOS/commands/"..args[1]
+                    shell.run(table.concat(args," "))
+                    break
                 end
-                print("Volume in drive "..dos.getCurrentDrive().mount.." is "..dos.getCurrentDrive().label)
-                print("Directory of "..dos.getCurrentDrive().mount..":\\"..cwd.."\n")
-                local path = dos.getCurrentDrive().path..cwd
-                local files = fs.list(path)
-                local contents = {}
-                for k,v in pairs(files) do
-                    if fs.isDir(v) then
-                        contents[#contents+1] = "<DIR>        "..v
-                    end
-                end
-                for k,v in pairs(files) do
-                    if not fs.isDir(v) then
-                        contents[#contents+1] = "     "..fs.getSize(v).." "..v
-                    end
-                end
-                for k,v in pairs(contents) do
-                    print(v)
-                end
-            else
+            end
+            if not found then
                 shell.run(unpack(args))
             end
         end
-        local x,y = term.getCursorPos()
-        term.setCursorPos(x,y+1)
     end
 end

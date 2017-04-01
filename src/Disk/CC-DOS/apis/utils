@@ -1,0 +1,55 @@
+-- CC-DOS v1.5 - Utilities API
+
+-- Functions
+
+function explode(inputstr,sep)
+    if sep == nil then
+        sep = "%s"
+    end
+    local t = {} ; i=1
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+        t[i] = str
+        i = i + 1
+    end
+    return t
+end
+
+function replace(pos,str,r)
+    return str:sub(1, pos-1) .. r .. str:sub(pos+1)
+end
+
+function dosPathToUnixPath(path)
+    local drives = storage.getDrives()
+    local mnt = explode(path,":\\")[1]
+    for k,v in pairs(drives) do
+        if storage.isRegistered(v.LOCATION,mnt) then
+            if mnt == "C" then
+    		    local brk = string.sub(path,4,5+(string.len(path)-5))
+    		    local pth = table.concat(explode(brk,"\\"),"/")
+    		    return "/"..pth
+    	    else
+    		    local brk = drive.path..string.sub(path,4,5+(string.len(path)-5))
+    		    local pth = table.concat(explode(brk,"\\"),"/")
+    		    return pth
+    	    end
+    	    return nil
+        end
+    end
+    return nil
+end
+
+function unixPathToDosPath(path)
+    local drives = storage.getDrives()
+    local mnt = explode(path,"/")[1]
+    local p = explode(replace(mnt:len(),path,""),"\\")
+    if path:sub(0,0) == "/" then
+        mnt = explode(path,"/")[2]
+        p = explode(replace(mnt:len(),path,""),"\\")
+    end
+    for k,v in pairs(drives) do
+        if v.LOCATION == mnt then
+            return v.NAME..":\\"..table.concat(p,"\\")
+        end
+    end
+    return nil
+end

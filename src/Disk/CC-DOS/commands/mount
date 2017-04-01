@@ -1,0 +1,17 @@
+local function loadApis()
+    local apis = fs.list("/CC-DOS/apis/")
+    for k,v in pairs(apis) do
+        os.loadAPI("/CC-DOS/apis/"..v)
+    end
+end
+
+local args = {...}
+
+if #args < 2 then
+    print("Usage: mount <drive> <name>")
+    print("\nExample: mount disk_0 D\nMounts a network disk called disk_0 to be accessed from D:\\")
+    return
+end
+if storage.addDrive(args[2],args[1]) == false then
+    print("Failed to mount "..args[1].." to "..args[2])
+end

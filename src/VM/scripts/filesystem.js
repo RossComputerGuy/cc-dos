@@ -1,7 +1,10 @@
+
 //
 //  filesystem.js
 //  GravityScore and 1lann
 //
+
+
 
 var fs;
 
@@ -23,37 +26,35 @@ filesystem.setup = function(callback) {
 	request.responseType = "arraybuffer";
 
 	request.onload = function(evt) {
-		if (!request.response) {
-			console.log("Failed to load ComputerCraft rom!");
-			console.log("Error: ", evt);
-			alert("Failed to download rom files!")
-			return;
-		}
-		
 		var req = new XMLHttpRequest();
-		req.open("GET",globals.paths.dos,true);
+		req.open("GET", globals.paths.dos, true);
 		req.responseType = "arraybuffer";
 		req.onload = function(e) {
-			if(!req.response) {
+			if (!request.response) {
 				console.log("Failed to load ComputerCraft rom!");
+				console.log("Error: ", evt);
+				alert("Failed to download rom files!")
+				return;
+			}
+			if (!req.response) {
+				console.log("Failed to load CC-DOS rom!");
 				console.log("Error: ", e);
 				alert("Failed to download rom files!")
 				return;
 			}
-
+			
 			var buffer = new Buffer(request.response);
 			var mfs = new BrowserFS.FileSystem.MountableFileSystem();
-			mfs.mount("/dos",new BrowserFS.FileSystem.ZipFS(new Buffer(req.response)));
-			mfs.mount("/computers", new BrowserFS.FileSystem.LocalStorage());
 			mfs.mount("/rom", new BrowserFS.FileSystem.ZipFS(buffer));
-
+			mfs.mount("/disk", new BrowserFS.FileSystem.ZipFS(new Buffer(req.response)));
+			mfs.mount("/computer", new BrowserFS.FileSystem.LocalStorage());
 			BrowserFS.initialize(mfs);
 			fs = require("fs");
-
+			
 			callback();
 		};
 		req.send(null);
-	}
+	};
 
 	request.send(null);
 }
@@ -433,10 +434,6 @@ computerFilesystem.resolve = function(path, computerID) {
 		path = filesystem.format(path.substring(path.indexOf("/rom")));
 	}
 
-	if (path.indexOf(base + "/dos/") == 0 || path == base + "/dos") {
-		path = filesystem.format(path.substring(path.indexOf("/dos")));
-	}
-
 	return path;
 }
 
@@ -444,6 +441,7 @@ computerFilesystem.resolve = function(path, computerID) {
 computerFilesystem.isReadOnly = function(path) {
 	var computer = core.getActiveComputer();
 	var base = "/computers/" + computer.id.toString();
+	var base = "/disk";
 	var is = true;
 
 	if (path.indexOf(base) == 0) {
@@ -472,7 +470,6 @@ computerFilesystem.list = function(path) {
 	var files = filesystem.list(path);
 	if (path == computerFilesystem.resolve("/")) {
 		files.push("rom");
-		files.push("dos");
 	}
 
 	return files;
