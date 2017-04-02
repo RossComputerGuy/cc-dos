@@ -1,0 +1,13 @@
+local function loadApis()
+    local apis = fs.list("/CC-DOS/apis/")
+    for k,v in pairs(apis) do
+        os.loadAPI("/CC-DOS/apis/"..v)
+    end
+end
+
+local args = {...}
+if #args == 0 then
+    print("Usage: ping <host>")
+    return
+end
+print(net.ping(args[1]))

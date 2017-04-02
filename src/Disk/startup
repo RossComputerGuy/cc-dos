@@ -17,7 +17,7 @@ local function loadApis()
 end
 
 local function bootstrap()
-    help.setPath("/CC-DOS/help/")
+    help.setPath(help.path()..":/CC-DOS/help/")
     for k,v in pairs(shell.aliases()) do
         shell.clearAlias(k)
     end

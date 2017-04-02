@@ -1,0 +1,7 @@
+This is the CC-DOS Utilities API.
+
+Functions:
+utils.explode(inputstr,sep) - Seperates a string by the sep variable
+utils.replace(pos,str,r) - Replaces a string
+utils.dosPathToUnixPath(path) - Converts a CC-DOS path to a valid CraftOS path
+utils.unixPathToDosPath(path) - Converts a CraftOS path to a valid CC-DOS path

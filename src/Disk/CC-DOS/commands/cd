@@ -1,0 +1,19 @@
+local function loadApis()
+    local apis = fs.list("/CC-DOS/apis/")
+    for k,v in pairs(apis) do
+        os.loadAPI("/CC-DOS/apis/"..v)
+    end
+end
+
+local args = {...}
+local syscache = sys.getcache("sys")
+local path = utils.dosPathToUnixPath(syscache.current_drive..":\\"..table.concat(utils.explode(shell.resolve(table.concat(utils.explode(args[1],"\\"),"/")),"/"),"\\"))
+if path == "/.." then
+    path = ".."
+end
+shell.run("cd",path)
+path = utils.explode(utils.unixPathToDosPath(shell.dir()),":\\")
+if path[2] == nil then
+    path[2] = ""
+end
+sys.cd(path[1],table.concat(path,"\\"):sub(3))

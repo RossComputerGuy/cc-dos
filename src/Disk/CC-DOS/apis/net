@@ -1,0 +1,289 @@
+-- CC-DOS v1.5 - Networking API
+
+-- Variables
+local build = {}
+
+build.dosdir = "CC-DOS"
+build.version = "1.5"
+build.rnp_version = 0
+
+RNPCodes = {}
+RNPCodes[1] = "Failure"
+RNPCodes[2] = "OK"
+RNPCodes[3] = "Timeout"
+RNPCodes[4] = "Invalid Version"
+RNPCodes[5] = "Invalid Credentials"
+
+-- Functions
+local function RNPSocket_build_client_packet(action,id,source,dest,flags,info)
+    local packet = {}
+    packet.version = build.rnp_version
+    packet.action = action
+    packet.id = id
+    packet.source = source
+    packet.dest = dest
+    packet.flags = flags
+    packet.info = info
+    packet.type = "client"
+    return packet
+end
+
+local function RNPSocket_build_server_packet(action,id,source,dest,flags,info)
+    local packet = {}
+    packet.version = build.rnp_version
+    packet.action = action
+    packet.id = id
+    packet.source = source
+    packet.dest = dest
+    packet.flags = flags
+    packet.info = info
+    packet.type = "server"
+    return packet
+end
+
+local function RNPSocket_run(self)
+    if self.BROADCASTING then
+        senderId, message, protocol = rednet.receive("RNP")
+        local packet = textutils.unserialize(message)
+        if packet.version == build.rnp_version then
+            if packet.action == "connect" then
+                clientFound = false
+                for key,client in pairs(self.CLIENTS) do
+                    if client == packet.source then
+                        local connectInfo = {}
+                        connectInfo.port = self.PORT
+                        connectInfo.status = 1
+                        local connectPacket = RNPSocket_build_server_packet("connect",self.PACKET_COUNT,self.HOST,packet.source,false,connectInfo)
+                        self.PACKET_COUNT = self.PACKET_COUNT+1
+                        rednet.broadcast(textutils.serialize(connectPacket),"RNP")
+                        break
+                    else
+                        clientFound = true
+                    end
+                end
+                if clientFound then
+                    local connectInfo = {}
+                    connectInfo.port = self.PORT
+                    connectInfo.status = 2
+                    local connectPacket = RNPSocket_build_server_packet("connect",self.PACKET_COUNT,self.HOST,packet.source,false,connectInfo)
+                    self.PACKET_COUNT = self.PACKET_COUNT+1
+                    rednet.broadcast(textutils.serialize(connectPacket),"RNP")
+                    if not self.EVENTS["connect"] == nil then
+                        self.EVENTS["connect"](packet)
+                    end
+                end
+            elseif packet.action == "disconnect" then
+                for key,client in pairs(self.CLIENTS) do
+                    if client == packet.source then
+                        local connectInfo = {}
+                        connectInfo.port = self.PORT
+                        connectInfo.status = 2
+                        local connectPacket = RNPSocket_build_server_packet("disconnect",self.PACKET_COUNT,self.HOST,packet.source,false,connectInfo)
+                        self.PACKET_COUNT = self.PACKET_COUNT+1
+                        rednet.broadcast(textutils.serialize(connectPacket),"RNP")
+                        self.CLIENTS[key] = nil
+                        if not self.EVENTS["disconnect"] == nil then
+                            self.EVENTS["disconnect"](packet)
+                        end
+                        break
+                    end
+                end
+            elseif not self.EVENTS[packet.action] == nil then
+                self.EVENTS[packet.action](packet)
+            end
+        end
+        coroutine.resume(self.THREAD,self)
+    elseif self.CONNECTED then
+        senderId, message, protocol = rednet.receive("RNP")
+        local packet = textutils.unserialize(message)
+        if packet.version == build.rnp_version then
+            if packet.dest == self.HOST then
+                if packet.source == self.DEST then
+                    if not self.EVENTS[packet.action] == nil then
+                        self.EVENTS[packet.action](packet)
+                    end
+                end
+            end
+        end
+        coroutine.resume(self.THREAD,self)
+    end
+end
+
+function ping(host)
+    local nets = {rednet.lookup("RNP",tostring(host))}
+    for k,v in pairs(nets) do
+        if tostring(v) == tostring(host) then
+            return "Found "..tostring(v)
+        end
+    end
+    return "Didn't find "..tostring(host)
+end
+
+-- Classes
+
+RNPSocket = {}
+
+function RNPSocket.__init__()
+    local self = {}
+    self.PACKET_COUNT = 0
+    self.TIMEOUT = 0
+    self.CONNECTED = false
+    self.HOST = tostring(os.getComputerID())
+    self.EVENTS = {}
+    setmetatable(self,{__index=RNPSocket})
+    return self
+end
+
+function RNPSocket:setTimeout(t)
+    self.TIMEOUT = t
+end
+
+function RNPSocket:open(dest,port)
+    if self.CONNECTED then
+        return false
+    end
+    local packet = RNPSocket_build_client_packet("connect",self.PACKET_COUNT,os.getComputerID(),dest,false,port)
+    self.PACKET_COUNT = self.PACKET_COUNT+1
+    rednet.broadcast(textutils.serialize(packet),"RNP")
+    senderId, message, protocol = rednet.receive("RNP",self.TIMEOUT)
+    local serverPacket = textutils.unserialize(message)
+    if serverPacket.version == build.rnp_version then
+        if serverPacket.dest == packet.source then
+            if RNPCodes[serverPacket.info.status] == RNPCodes[2] then
+                if serverPacket.info.port == packet.port then
+                    if serverPacket.action == "connect" then
+                        self.CONNECTED = true
+                        self.PORT = port
+                        self.DEST = dest
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+function RNPSocket:close()
+    if not self.CONNECTED and not self.BROADCASTING then
+        return false
+    end
+    if self.CONNECTED then
+        local packet = RNPSocket_build_client_packet("disconnect",self.PACKET_COUNT,os.getComputerID(),dest,false,self.PORT)
+        self.PACKET_COUNT = self.PACKET_COUNT+1
+        rednet.broadcast(textutils.serialize(packet),"RNP")
+        senderId, message, protocol = rednet.receive("RNP",self.TIMEOUT)
+        local serverPacket = textutils.unserialize(message)
+        if serverPacket.version == build.rnp_version then
+            if serverPacket.dest == packet.source then
+                if RNPCodes[serverPacket.info.status] == RNPCodes[2] then
+                    if serverPacket.info.port == packet.port then
+                        if serverPacket.action == "disconnect" then
+                            self.CONNECTED = false
+                            return true
+                        end
+                    end
+                end
+            end
+        end
+    elseif self.BROADCASTING then
+        self.BROADCASTING = false
+        rednet.unhost("RNP",self.HOST)
+        return true
+    end
+    return false
+end
+
+function RNPSocket:listen(port)
+    if self.BROADCASTING then
+        return false
+    end
+    self.PORT = port
+    self.CLIENTS = {}
+    self.BROADCASTING = true
+    self.RUN = RNPSocket_run
+    rednet.host("RNP",self.HOST)
+    self.THREAD = coroutine.create(self.RUN)
+    success,value = coroutine.resume(self.THREAD,self)
+    return success
+end
+
+function RNPSocket:send(data)
+    if not self.CONNECTED then
+        return false
+    end
+    local info = {}
+    info.port = self.PORT
+    info.data = data
+    local builder_packet = RNPSocket_build_client_packet("data",self.PACKET_COUNT,self.HOST,self.DEST,false,info)
+    self.PACKET_COUNT = self.PACKET_COUNT+1
+    local packet = textutils.serialize(builder_packet)
+    rednet.broadcast(packet,"RNP")
+    return true
+end
+
+function RNPSocket:on(event,cb)
+    if type(cb) == "function" then
+        self.EVENTS[event] = cb
+    else
+        return self.EVENTS[event]
+    end
+end
+
+RNPServer = {}
+
+function RNPServer.__init__()
+    local self = {}
+    self.SOCKET = RNPSocket.__init__()
+    setmetatable(self,{__index=RNPServer})
+    return self
+end
+
+function RNPServer:setTimeout(t)
+    return self.SOCKET:setTimeout(t)
+end
+
+function RNPServer:listen(port)
+    return self.SOCKET:listen(port)
+end
+
+function RNPServer:close()
+    return self.SOCKET:close()
+end
+
+function RNPServer:setEvent(event,cb)
+    return self.SOCKET:on(event,cb)
+end
+
+function RNPServer:setOnConnect(cb)
+    return self.SOCKET:on("connect",cb)
+end
+
+function RNPServer:setOnDisconnect(cb)
+    return self.SOCKET:on("disconnect",cb)
+end
+
+RNPClient = {}
+
+function RNPClient.__init__()
+    local self = {}
+    self.SOCKET = RNPSocket.__init__()
+    setmetatable(self,{__index=RNPClient})
+    return self
+end
+
+function RNPClient:setTimeout(t)
+    return self.SOCKET:setTimeout(t)
+end
+
+function RNPClient:connect(dest,port)
+    return self.SOCKET:open(dest,port)
+end
+
+function RNPClient:disconnect()
+    return self.SOCKET:close()
+end
+
+function RNPClient:send(data)
+    return self.SOCKET:send(data)
+end

@@ -1,0 +1,7 @@
+This is the CC-DOS Storage API.
+
+Functions:
+storage.getDrives() - This will return an array of all the drives
+storage.isRegistered(loc,mnt) - Returns true or false if the drive is registered
+storage.addDrive(mnt,loc) - Adds a drive
+storage.Drive(location,mount) - Creates a new drive and registers it if not already

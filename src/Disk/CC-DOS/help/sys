@@ -1,0 +1,11 @@
+This is the CC-DOS System API.
+
+Functions:
+sys.cd(mnt,path) - Changes the current drive and path
+sys.getcache(name) - Returns the cached data from a cached
+sys.getconfig(name) - Returns a configuration value, if name is nil then it returns the entire configuration
+sys.getvar(name) - Returns a system variable value
+sys.setcache(name,cache) - Writes to the cache
+sys.setvar(name,value) - Sets a system variable value
+sys.resetCache(name) - Resets a cache
+sys.version() - Alias of os.version(), returns "CC-DOS Version " then the build version of CC-DOS

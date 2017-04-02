@@ -42,6 +42,7 @@ function unixPathToDosPath(path)
     local drives = storage.getDrives()
     local mnt = explode(path,"/")[1]
     local p = explode(replace(mnt:len(),path,""),"\\")
+    print(mnt)
     if path:sub(0,0) == "/" then
         mnt = explode(path,"/")[2]
         p = explode(replace(mnt:len(),path,""),"\\")

@@ -1,1 +1,0 @@
-/home/ubuntu/workspace/src/Disk/command.lua
