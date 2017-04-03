@@ -110,6 +110,9 @@ local function RNPSocket_run(self)
 end
 
 function ping(host)
+    if rednet.lookup == nil then
+        return "Didn't find "..tostring(host)
+    end
     local nets = {rednet.lookup("RNP",tostring(host))}
     for k,v in pairs(nets) do
         if tostring(v) == tostring(host) then

@@ -1,1 +1,1 @@
-{[1]={["TYPE"]="FDD",["LOCATION"]="right",["FREE_MEM"]=524288,["NAME"]="A",["LABEL"]="FDD-A",["PATH"]="disk",},[2]={["TYPE"]="HDD",["LOCATION"]="hdd",["FREE_MEM"]=2056430,["NAME"]="C",["LABEL"]="CC-DOS",["PATH"]="/",},}
+{[1]={["TYPE"]="FDD",["LOCATION"]="right",["FREE_MEM"]=524288,["NAME"]="A",["LABEL"]="FDD-A",["PATH"]="disk",},[2]={["TYPE"]="HDD",["LOCATION"]="hdd",["FREE_MEM"]=2056342,["NAME"]="C",["LABEL"]="CC-DOS",["PATH"]="/",},}
