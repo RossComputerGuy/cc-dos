@@ -67,9 +67,10 @@ os.setvar = setvar
 function resetCache(name)
     local caches = {}
     caches.sys = {}
-	caches.sys.drive_type = "HDD"
+    caches.sys.drive_type = "HDD"
     caches.sys.current_path = ""
     caches.sys.current_drive = "C"
+    caches.drives = {}
     local file = fs.open(build.dosdir.."/cache/"..name..".dat","w")
     file.write(textutils.serialize(caches[name]))
     file.close()

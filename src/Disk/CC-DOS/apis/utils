@@ -27,10 +27,10 @@ function dosPathToUnixPath(path)
     		    local brk = string.sub(path,4,5+(string.len(path)-5))
     		    local pth = table.concat(explode(brk,"\\"),"/")
     		    return "/"..pth
-    	    else
-    		    local brk = drive.path..string.sub(path,4,5+(string.len(path)-5))
+	    else
+    		    local brk = string.sub(path,4,5+(string.len(path)-5))
     		    local pth = table.concat(explode(brk,"\\"),"/")
-    		    return pth
+    		    return v.PATH..pth
     	    end
     	    return nil
         end

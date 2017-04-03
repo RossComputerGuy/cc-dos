@@ -45,52 +45,66 @@ end
 
 local function register(drv)
     local drives = getDrives()
+    for k,v in pairs(drives) do
+    	if v.PATH == drv.PATH then
+    		return false
+    	end
+    end
     if not isRegistered(drv.LOCATION,drv.NAME) then
         drives[#drives+1] = drv
     end
     local file = fs.open(build.dosdir.."/cache/drives.dat","w")
     file.write(textutils.serialize(serializeDrives(drives)))
     file.close()
+    return true
 end
 
 function addDrive(mnt,loc)
     if loc == nil then
-        local sides = {"left","right","top","bottom","front","back"}
+    	local sides = {"right","left","top","bottom","front","back"}
         for k,v in pairs(sides) do
             local drv = addDrive(mnt,v)
-            if not drv == nil then
-                return drv
+            if drv == false then
+            else
+            	return drv
             end
-            return false
-        end
+		end
     else
         return Drive(loc,mnt)
     end
+    return false
 end
 
 -- Classes
 
 function Drive(location,mount)
     local self = {}
+    if isRegistered(location,mount) then
+    	return false
+    end
     
-    if disk.isPresent(location) or location == "hdd" then
+    if location == "hdd" then
         self.LOCATION = location
         self.NAME = mount
-        
-        if disk.hasData(self.LOCATION) then
-            self.TYPE = "FDD"
-            self.ID = disk.getID(self.LOCATION)
-            self.PATH = disk.getMountPath(self.LOCATION)
-            self.LABEL = disk.getLabel(self.LOCATION)
-        elseif self.LOCATION == "hdd" then
-            self.TYPE = "HDD"
-            self.PATH = "/"
-            self.LABEL = "CC-DOS"
-        end
+        self.TYPE = "HDD"
+        self.PATH = "/"
+        self.LABEL = "CC-DOS"
         self.FREE_MEM = fs.getFreeSpace(self.PATH)
-        register(self)
-        return self
+        if register(self) == true then
+        	return self
+        end
+    elseif disk.isPresent(location) and disk.hasData(location) then
+        self.LOCATION = location
+        self.NAME = mount
+        self.TYPE = "FDD"
+        self.PATH = disk.getMountPath(self.LOCATION)
+        self.LABEL = "FDD-"..mount
+        self.FREE_MEM = fs.getFreeSpace(self.PATH)
+        if register(self) == true then
+        	return self
+        end
     else
-        return nil
+        return false
     end
+    return false
 end
